@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#0b1019"><meta name="description" content="粉色小怪兽的午夜逃生之旅：随机游乐园、手电驱鬼、糖果诱饵。第一人称场景，支持切换上帝视角；保留原角色外貌的透明角色与走路动画。">
+  <title>粉粉 · 午夜游乐园</title><link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+<main id="app">
+  <canvas id="game" aria-label="午夜游乐园游戏画面"></canvas>
+  <header id="topbar"><a class="brand" href="#" id="home"><i></i><span>粉粉<span class="brand-divider"> / </span><small>午夜游乐园</small></span></a><div class="top-actions"><button id="viewBtn" title="按 V 切换视角">视角 · 第一人称</button><button id="sound" title="开关声音" aria-label="开关声音">声音 开</button><button id="pause" title="暂停游戏" aria-label="暂停游戏">Ⅱ</button></div></header>
+  <div id="hud" hidden>
+    <div class="objective"><span class="lamp"></span><span id="goal">寻找保险丝</span><b id="fuses">0 / 5</b></div>
+    <div class="resources"><div class="stat"><span>生命</span><b id="hearts">♥ ♥ ♥</b></div><div class="stat"><span>电量</span><b id="batteryLabel">100%</b><div class="track"><i id="batteryBar"></i></div></div><div class="stat"><span>体力</span><div class="track stamina"><i id="staminaBar"></i></div></div><div class="stat time"><span>时间</span><b id="clock">00:00</b></div></div>
+  </div>
+  <div id="actorBadge" hidden><canvas id="actorPortrait" width="80" height="94"></canvas><span>你正在操控<b>粉粉</b></span></div><div id="lookHint" hidden>右侧拖动 · 转头</div>
+  <div id="musicHint" hidden></div><div id="message" role="status"></div><div id="danger" hidden><i></i> 它听见你了</div>
+  <div id="desktopHelp" hidden><span><kbd>W A S D</kbd> <span id="moveHelp">移动 · 鼠标转头</span></span><span><kbd>Shift</kbd> 冲刺</span><span><kbd>空格</kbd> 闪光</span><span><kbd>E</kbd> 诱饵</span><span><kbd>F</kbd> 手电</span></div>
+  <div id="touchControls" hidden><div id="joystick" aria-label="拖动摇杆移动"><div id="stick"></div><span id="moveLabel">前进 / 平移</span></div><div class="touch-actions"><button id="baitBtn"><span>◈</span><small>糖果 <b id="baitCount">2</b></small></button><button id="flashBtn"><span>✦</span><small>闪光</small></button><button id="sprintBtn"><span>»</span><small>冲刺</small></button></div></div>
+  <div id="desktopAbilities" hidden><button id="lightBtn">☀ 手电 开</button><button id="mapBtn">⌖ 指路 <kbd>Q</kbd></button><span>◈ 糖果 <b id="baitCountDesktop">2</b></span></div>
+  <div id="overlay" class="overlay">
+    <section id="menu" class="card menu-card">
+      <div class="eyebrow"><span></span> THE PARK CLOSES AT MIDNIGHT</div>
+      <div class="menu-layout"><div class="menu-copy"><p class="chapter">第一夜 · 最后一位游客</p><h1>午夜<span>游乐园<span class="title-dot">.</span></span></h1><p class="intro">闭园以后，它们一起醒了。<br>带着粉粉找回电力，别让笑声追上你。</p><div class="difficulty" aria-label="难度"><button data-mode="easy">初次夜游</button><button data-mode="normal" class="selected">心跳加速</button><button data-mode="hard">噩梦来访</button></div><button id="start" class="primary">进入游乐园 <span>↗</span></button><div class="menu-notes"><span>◈ 透明角色</span><span>✦ 闪光驱退蛋糕</span><span>V 双视角切换</span></div></div><div class="mascot-wrap"><canvas id="portrait" width="420" height="440" aria-label="粉色圆滚滚、绿色大眼睛的小怪兽粉粉，直接使用上传原图"></canvas><div class="mascot-label"><span>今晚的主角</span><b>粉粉</b><small>胆子小，跑得挺快。</small></div></div></div>
+      <div class="howto"><p><b>01</b> 找齐 5 枚保险丝</p><p><b>02</b> 闪光逼退，糖果引开</p><p><b>03</b> 回到入口，开门逃生</p></div><p class="best" id="best">默认第一视角 · 按 V / 点右上角切换视角</p>
+    </section>
+    <section id="rulesCard" class="card rules-card" hidden><div class="eyebrow">SURVIVAL GUIDE</div><h2>先记住这几件事。</h2><div class="rule-lines"><p><b>①</b> 绿色保险丝：走近自动捡，集齐 <strong>5 枚</strong>后回入口逃生。</p><p><b>②</b> 蓝色电池：走近补电；电量高于 83% 时先留在地上。</p><p><b>③</b> 怪物靠近：点<strong>闪光</strong>逼退它，或扔<strong>糖果</strong>引开。闪光消耗 18% 电量，冷却 7 秒。</p><p><b>④</b> 左侧摇杆移动，右侧拖动转头；点「视角」可切换上帝视角。电脑用 WASD，空格闪光，E 扔糖果。</p></div><p class="rule-note">确认后，两只怪物会展示 2 秒。展示期间不扣血、不耗电，也不计时。</p><button id="confirmRules" class="primary">知道了，开始 <span>↗</span></button><button id="rulesBack" class="secondary">返回主菜单</button></section>
+    <section id="result" class="card result-card" hidden><div id="resultTag" class="eyebrow">NIGHT COMPLETE</div><h2 id="resultTitle">天快亮了。</h2><p id="resultText"></p><div id="resultStats"></div><button id="retry" class="primary">再闯一局 <span>↻</span></button><button id="back" class="secondary">返回主菜单</button></section>
+    <section id="pauseCard" class="card pause-card" hidden><div class="eyebrow">TAKE A BREATH</div><h2>先喘口气。</h2><p>找齐保险丝后回到入口。<br>别一直冲刺，追逐者会听见脚步声。<br>闪光需要 18% 电量；糖果能把它引开。</p><button id="resume" class="primary">继续夜游 <span>↗</span></button><button id="quit" class="secondary">返回主菜单</button></section>
+  </div>
+  <div id="hitVeil"></div><div class="grain"></div>
+</main><script src="music.js?v=5"></script><script src="wall-textures.js?v=5"></script><script src="first-person.js?v=5"></script><script src="character-rig.js?v=5"></script><script src="game.js?v=5"></script>
+</body></html>
