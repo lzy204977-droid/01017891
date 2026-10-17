@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#081120">
+<title>驾控挑战 · 双车命运（前进方向修正版）</title>
+<style>
+:root{color-scheme:dark;--sky:#7cdaff;--gold:#ffd888;--blue:#37c8ff;--red:#ff4e5c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#03070e;color:white;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;touch-action:none}
+button{font:inherit;cursor:pointer;color:inherit;-webkit-appearance:none;appearance:none;border:0;outline:0}
+#app{position:relative;width:100%;height:100%;height:100dvh;overflow:hidden;isolation:isolate}
+.screen{position:absolute;inset:0;display:none;overflow:hidden}.screen.active{display:block}
+/* Menu */
+#menu{background:linear-gradient(160deg,#152b49 0%,#111e32 40%,#090d19 100%)}
+#menu:before{content:"";position:absolute;inset:-35px;background:linear-gradient(0deg,rgba(1,3,11,.94),rgba(4,10,22,.55) 57%,rgba(5,13,29,.74)),url('assets/menu.webp') center center/cover no-repeat;filter:blur(15px) saturate(1.15);transform:scale(1.08)}
+.ambient{position:absolute;pointer-events:none;border-radius:50%;filter:blur(60px);opacity:.45}.ambient.a{width:60vw;height:40vh;background:#096ba3;top:22%;left:-23%}.ambient.b{width:60vw;height:40vh;background:#b57930;top:30%;right:-27%}
+.menu-layout{position:relative;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:calc(env(safe-area-inset-top) + 20px) clamp(16px,4.2vw,38px) calc(env(safe-area-inset-bottom) + 24px)}
+.brand-kicker{font-size:11px;letter-spacing:.32em;font-weight:700;color:#83dafa;text-align:center}.brand-title{margin:3px 0 0;text-align:center;font-size:clamp(40px,10vw,65px);font-weight:1000;font-style:italic;line-height:1.1;letter-spacing:.03em;text-shadow:0 5px 28px #208ac488,0 2px 1px #121a2a}.brand-title span{color:#ffdc97;text-shadow:0 0 25px #ffc15c66}.menu-subtitle{text-align:center;margin:10px 0 0;color:#c9dcf0;font-size:13px;letter-spacing:.1em}
+.garage{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:stretch;flex:1;min-height:0;padding:6px 0 0}
+.car-option{position:relative;min-width:0;overflow:hidden;text-align:left;border:1.5px solid #96b1dc47;background:linear-gradient(180deg,#1b344ac7 0%,#0a1426e8 45%,#101b30f5 100%);border-radius:20px;padding:9px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;box-shadow:0 10px 20px #0006, inset 0 1px #ffffff12;transition:border-color .15s,box-shadow .15s,transform .15s;touch-action:manipulation}
+.car-option.vselected{border-color:#50caff;box-shadow:0 0 0 1px #57ccff9c,0 0 30px #238fff50,inset 0 1px #ffffff35;transform:translateY(-3px)}
+.car-option.mselected{border-color:#ffd17d;box-shadow:0 0 0 1px #ffd98f9c,0 0 30px #ffae4550,inset 0 1px #ffffff35;transform:translateY(-3px)}
+.car-img-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.car-img-wrap:after{content:"";position:absolute;left:3%;right:3%;bottom:13%;height:14%;border-radius:50%;background:#000b;filter:blur(12px)}
+.car-img{display:block;position:relative;z-index:1;width:118%;height:auto;object-fit:contain;max-height:95%;filter:drop-shadow(0 15px 12px #000a)}
+.car-img.m{width:125%;max-width:unset}
+.car-info{position:relative;z-index:2;flex:none;border-top:1px solid #ffffff24;padding:12px 0 8px;text-align:center}
+.car-name{font-size:clamp(16px,4.8vw,22px);font-weight:900;white-space:nowrap;letter-spacing:-.04em}.car-tag{font-size:11px;color:#b2c6db;margin-top:5px}.pick-row{display:flex;align-items:center;justify-content:center;margin-top:10px;font-size:11px;color:#cfdef2;gap:7px}
+.pick-dot{width:20px;height:20px;border:2px solid #a7bdd2a0;border-radius:50%;display:grid;place-items:center}.vselected .pick-dot{border-color:#4ad7ff;background:#12acee;color:white}.mselected .pick-dot{border-color:#ffe1a5;background:#c88926;color:white}.pick-dot:after{content:""}.vselected .pick-dot:after,.mselected .pick-dot:after{content:"✓";font-weight:900;font-size:13px}
+.menu-bottom{flex:none}.route-note{text-align:center;font-size:11px;color:#a5b5cb;margin:1px auto 12px}.route-note b{color:#e9f1ff}
+.main-btn{background:linear-gradient(100deg,#ffcb69,#fff0bd 50%,#f6b948);color:#352113;font-weight:1000;border-radius:16px;display:block;width:100%;padding:16px 10px;box-shadow:0 8px 28px #e799405c,inset 0 2px #fff8d6;font-size:clamp(19px,5.5vw,25px);letter-spacing:.14em;touch-action:manipulation}
+.disclaimer{text-align:center;font-size:10px;color:#9bacc6;margin-top:11px;line-height:1.6}
+/* Drive */
+#drive{background:#0c1622}#roadCanvas{position:absolute;inset:0;width:100%;height:100%}
+.vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(2,8,23,.39),transparent 24%,transparent 55%,rgba(0,4,14,.5))}
+.drive-head{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;z-index:4}
+.glass{border:1px solid #c0d7ff38;background:linear-gradient(135deg,#07172edb,#0b1928b9);backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);box-shadow:0 5px 18px #01061266;border-radius:15px}
+.dashboard-meta{padding:10px 12px;min-width:116px}.drive-model{font-weight:900;font-size:13px}.drive-model em{font-style:normal;color:#a5dcff}.meta-km{font-size:11px;color:#aac1d6;margin-top:6px}.pause-btn{padding:12px 14px;font-size:19px;line-height:1;touch-action:manipulation}
+.map{position:absolute;right:13px;top:calc(env(safe-area-inset-top) + 98px);width:91px;height:91px;border:2px solid #93a7c65c;border-radius:50%;z-index:3;overflow:hidden;background:radial-gradient(circle at 60% 36%,#344e60f2,#08172ccc);box-shadow:0 4px 15px #041026af;opacity:.9}
+.map:before{content:"";position:absolute;top:-18%;left:40%;width:14px;height:142%;background:#617082;transform:rotate(23deg);box-shadow:-26px 0 0 #283548,22px 0 0 #283548}.map:after{content:"➤";position:absolute;top:34%;left:42%;color:#42c8ff;font-size:27px;transform:rotate(-70deg);filter:drop-shadow(0 0 5px #24aaff)}
+.vehicle{position:absolute;z-index:2;width:min(73vw,435px);max-height:56vh;object-fit:contain;left:50%;top:58%;transform:translate(-50%,-50%);transform-origin:54% 72%;filter:drop-shadow(5px 27px 13px #01060ec7) drop-shadow(0 0 4px #74a6d144);pointer-events:none;will-change:transform}
+.car-shadow{position:absolute;top:78%;left:50%;width:min(62vw,320px);height:30px;border-radius:50%;transform:translateX(-50%);background:#000b;filter:blur(14px);z-index:1;pointer-events:none}
+.speed-cluster{position:absolute;z-index:5;right:12px;top:calc(env(safe-area-inset-top) + 216px);width:clamp(112px,32vw,154px);height:clamp(112px,32vw,154px);border-radius:50%;border:2px solid #73c2efb2;background:radial-gradient(circle,#091224ee 48%,#162f48e8 72%,#040d20ec 74%);box-shadow:0 0 23px #0d93e44a, inset 0 0 20px #328ee656;display:flex;align-items:center;justify-content:center;flex-direction:column;overflow:hidden}
+.speed-cluster:before{content:"";position:absolute;inset:7px;border:5px solid transparent;border-top-color:#48d0ff;border-right-color:#438ccf;border-radius:50%;transform:rotate(-28deg);opacity:.75}
+.speed-cluster.alert{border-color:#ff6971;box-shadow:0 0 28px #fd385f87,inset 0 0 20px #ff3e5944}
+.speed-number{font-size:clamp(39px,11vw,56px);line-height:1;font-weight:900;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";letter-spacing:-.06em;z-index:1}.speed-unit{font-size:13px;color:#c7d9eb;z-index:1;margin-top:1px}.needle{position:absolute;bottom:50%;left:50%;height:36%;width:3px;border-radius:8px;background:#ff6875;transform-origin:50% 100%;transform:rotate(-110deg);box-shadow:0 0 8px #f64d6d;opacity:.9}
+.status-tip{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 202px);left:12px;max-width:44vw;padding:10px 11px;color:#dbeafd;font-size:11px;line-height:1.55}.status-tip strong{display:block;color:#81e3ff;font-size:12px;margin-bottom:2px}.status-tip.warn strong{color:#ff7f83}
+.road-warning{position:absolute;z-index:10;left:5%;right:5%;top:37%;padding:15px;text-align:center;border-radius:14px;border:2px solid #ff5063;background:linear-gradient(90deg,#650315ec,#23030cf2);box-shadow:0 0 30px #fa1735a8;display:none;animation:shake .12s linear infinite alternate}.road-warning span{display:block;color:#ffc2c2;font-size:13px}.road-warning b{font-size:25px;line-height:1.5}
+@keyframes shake{from{transform:translateX(-2px)}to{transform:translateX(2px)}}
+.controls{position:absolute;z-index:9;bottom:calc(env(safe-area-inset-bottom) + 18px);left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 13px;gap:7px;pointer-events:none}
+.control-group{display:flex;align-items:center;gap:8px;pointer-events:auto}
+.control{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:clamp(65px,20vw,91px);min-width:clamp(60px,18vw,85px);border:1.5px solid #ffffff6c;background:linear-gradient(145deg,#192b42ea,#060c18e8);border-radius:20px;box-shadow:0 6px 20px #000a,inset 0 1px #ffffff3e;touch-action:none;user-select:none;overscroll-behavior:none}
+.control .symbol{font-size:25px;font-weight:900;line-height:1}.control small{font-size:12px;font-weight:800}.control.pressed{transform:scale(.94);background:linear-gradient(145deg,#3d5f82,#133253);box-shadow:0 0 26px #399dffb3,inset 0 2px 15px #0004}.control.accel{border-color:#53c7ff;box-shadow:0 6px 20px #000a,0 0 13px #25baff35}.control.brake{border-color:#ff757a;background:linear-gradient(145deg,#58252c,#1d0a11)}.control.brake.pressed{background:linear-gradient(145deg,#a12734,#420511);box-shadow:0 0 26px #ff3954b3,inset 0 2px 15px #0004}
+.control.steer{width:clamp(50px,15vw,70px);min-width:0;border-radius:50%;height:clamp(65px,20vw,91px)}
+.music-chip{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 128px);left:14px;z-index:5;color:#d0e9ff;font-size:11px;background:#071528ae;padding:7px 10px;border-radius:20px;touch-action:manipulation}
+/* Pause and ending */
+.overlay{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:#050915ae;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}.overlay.show{display:flex}.dialog{width:min(85%,390px);padding:24px;text-align:center;border-radius:22px;border:1px solid #6c9bba66;background:linear-gradient(140deg,#102b42,#080f1e);box-shadow:0 22px 60px #000c}.dialog h2{margin:5px 0 10px}.dialog p{color:#bed2e4;font-size:13px;line-height:1.7}.action-btn{display:block;width:100%;padding:13px 8px;margin-top:12px;border-radius:13px;font-size:15px;font-weight:800;background:#246bba}.action-btn.secondary{background:#23364d}
+#ending{background:#060c16}.ending-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}.ending-shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,transparent 78%,rgba(0,2,9,.84) 90%,#020812e8 100%)}
+.ending-footer{position:absolute;z-index:3;bottom:calc(env(safe-area-inset-bottom) + 14px);left:14px;right:14px;display:flex;gap:9px}
+.ending-footer button{flex:1;padding:13px 6px;font-size:15px;border-radius:14px;font-weight:900;color:#111;background:linear-gradient(90deg,#ffe2a4,#ffc866);box-shadow:0 7px 23px #000a;touch-action:manipulation}.ending-footer button.alt{background:linear-gradient(90deg,#cbdcec,#789bc5)}
+.ending-head{position:absolute;top:calc(env(safe-area-inset-top) + 16px);left:15px;right:15px;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:8px}.ending-head .mini-label{font-size:11px;background:#071a2ec7;border:1px solid #a8c9e461;border-radius:25px;padding:7px 10px}.ending-head .km-final{font-size:13px;font-weight:900;color:#ffe2ad;background:#071a2ec7;border-radius:25px;padding:7px 12px}
+@media (max-height:690px){.menu-layout{padding-top:12px;padding-bottom:12px}.brand-title{font-size:35px}.menu-subtitle{margin-top:2px}.car-info{padding:7px 0 5px}.car-tag,.pick-row{margin-top:4px}.main-btn{padding:12px}.route-note{margin-bottom:6px}.disclaimer{font-size:9px;margin-top:5px}.car-img{max-height:78%}.speed-cluster{top:calc(env(safe-area-inset-top) + 170px)}.status-tip{top:calc(env(safe-area-inset-top) + 145px)}}
+@media (min-width:700px){#app{max-width:560px;margin:auto;box-shadow:0 0 0 100vmax #060b16,0 0 45px #020815} .car-option{padding:14px}.garage{gap:17px}}
+
+/* A photographic body option with individually spinning, perspective-compressed hubs. */
+.wheel-overlay{position:absolute;display:none;pointer-events:none;z-index:3;overflow:hidden;border-radius:50%;background:linear-gradient(90deg,#161a1e 0%,#747b80 26%,#b0b0ab 47%,#5c6368 74%,#181b1e 100%);border:2px solid #9a9a91;box-shadow:inset 0 0 7px #000d,1px 1px 3px #000b;will-change:transform}
+.wheel-spinner{position:absolute;inset:8% 8%;border-radius:50%;background:repeating-conic-gradient(from 0deg,#ccd0c7 0deg 9deg,#464c50 10deg 20deg,#a3a6a0 21deg 32deg,#373d42 33deg 45deg);box-shadow:inset 0 0 5px #2229;will-change:transform}
+.wheel-spinner:after{content:"";position:absolute;left:38%;top:38%;width:24%;height:24%;background:radial-gradient(circle,#e4e1d6,#797e7d);border-radius:50%;box-shadow:0 0 2px #111}
+#viewMode{position:absolute;z-index:10;top:calc(env(safe-area-inset-top) + 308px);left:12px;padding:8px 10px;border-radius:9px;background:#071b2dd1;border:1px solid #94d7f178;color:#e6f9ff;font-size:11px;font-weight:800;backdrop-filter:blur(6px);touch-action:manipulation}
+#speedFX{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;mix-blend-mode:screen;background:repeating-linear-gradient(89deg,transparent 0 33px,rgba(157,211,255,.09) 34px,transparent 35px 75px);mask-image:linear-gradient(0deg,black,transparent 48%);transition:opacity .25s}
+</style>
+<script>
+/* Drive3D: dependency-free realtime WebGL driving scene, offline capable. */
+(() => {
+'use strict';
+const TAU=Math.PI*2, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const I=()=>new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+function mul(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o}
+function trans(x=0,y=0,z=0){let m=I();m[12]=x;m[13]=y;m[14]=z;return m}
+function rx(a){let m=I(),c=Math.cos(a),s=Math.sin(a);m[5]=c;m[6]=s;m[9]=-s;m[10]=c;return m}
+function ry(a){let m=I(),c=Math.cos(a),s=Math.sin(a);m[0]=c;m[2]=-s;m[8]=s;m[10]=c;return m}
+function rz(a){let m=I(),c=Math.cos(a),s=Math.sin(a);m[0]=c;m[1]=s;m[4]=-s;m[5]=c;return m}
+function scl(x=1,y=1,z=1){let m=I();m[0]=x;m[5]=y;m[10]=z;return m}
+function combine(...args){return args.reduce((a,b)=>mul(a,b),I())}
+function persp(fov,aspect,n,f){let q=1/Math.tan(fov/2),m=new Float32Array(16);m[0]=q/aspect;m[5]=q;m[10]=(f+n)/(n-f);m[11]=-1;m[14]=2*f*n/(n-f);return m}
+function normalize(x){let l=Math.hypot(...x)||1;return x.map(v=>v/l)}
+function lookAt(eye,target,up=[0,1,0]){const z=normalize(eye.map((v,i)=>v-target[i]));let x=normalize([up[1]*z[2]-up[2]*z[1],up[2]*z[0]-up[0]*z[2],up[0]*z[1]-up[1]*z[0]]);const y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-x.reduce((s,v,i)=>s+v*eye[i],0),-y.reduce((s,v,i)=>s+v*eye[i],0),-z.reduce((s,v,i)=>s+v*eye[i],0),1])}
+const colors={tire:'#11161c',rubberSide:'#242a30',metal:'#b9c2cc',rim:'#d9dce2',hub:'#647587',glass:'#182b38',glassFront:'#223944',glassTint:'#10212c',frame:'#12171c',white:'#eeebdb',cream:'#ddd8c5',silver:'#d4d7d4',gold:'#b99b79',brown:'#443936',black:'#101419',blue:'#65d9ff',led:'#eaffff',red:'#ee4b45',road:'#343c44',shoulder:'#6c7378',guard:'#c1c8cb',tree:'#254f3b',foliage:'#326b4b',windows:'#5c8296'};
+function rgb(s){s=(colors[s]||s||'#ffffff').replace('#','');let n=parseInt(s,16);return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255]}
+class Geo {constructor(){this.v=[]}
+ tri(a,b,c,col){let u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],w=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];let nn=normalize([u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]]),co=rgb(col);for(const p of [a,b,c])this.v.push(...p,...nn,...co)}
+ quad(a,b,c,d,col){this.tri(a,b,c,col);this.tri(a,c,d,col)}
+ box(x,y,z,w,h,l,col){let a=x-w/2,b=x+w/2,c=y-h/2,d=y+h/2,e=z-l/2,f=z+l/2;this.quad([a,c,f],[b,c,f],[b,d,f],[a,d,f],col);this.quad([b,c,e],[a,c,e],[a,d,e],[b,d,e],col);this.quad([a,c,e],[a,c,f],[a,d,f],[a,d,e],col);this.quad([b,c,f],[b,c,e],[b,d,e],[b,d,f],col);this.quad([a,d,f],[b,d,f],[b,d,e],[a,d,e],col);this.quad([a,c,e],[b,c,e],[b,c,f],[a,c,f],col);return this}
+ wedge(z0,z1,ymid,roof0,roof1,lowerW,upperW,color){const a=-lowerW/2,b=lowerW/2,c=-upperW/2,d=upperW/2;this.quad([a,ymid,z0],[b,ymid,z0],[d,roof0,z0],[c,roof0,z0],color);this.quad([b,ymid,z1],[a,ymid,z1],[c,roof1,z1],[d,roof1,z1],color);this.quad([a,ymid,z1],[a,ymid,z0],[c,roof0,z0],[c,roof1,z1],color);this.quad([b,ymid,z0],[b,ymid,z1],[d,roof1,z1],[d,roof0,z0],color);this.quad([c,roof0,z0],[d,roof0,z0],[d,roof1,z1],[c,roof1,z1],color);return this}
+ cylX(x,y,z,r1,r2,length,sides,col,side='rubberSide'){let a=x-length/2,b=x+length/2;for(let i=0;i<sides;i++){let t=i*TAU/sides,u=(i+1)*TAU/sides;let y0=Math.sin(t)*r1,z0=Math.cos(t)*r1,y1=Math.sin(u)*r1,z1=Math.cos(u)*r1;let Y0=Math.sin(t)*r2,Z0=Math.cos(t)*r2,Y1=Math.sin(u)*r2,Z1=Math.cos(u)*r2;
+ this.quad([a,y+y0,z+z0],[a,y+y1,z+z1],[b,y+Y1,z+Z1],[b,y+Y0,z+Z0],col);this.tri([a,y,z],[a,y+y1,z+z1],[a,y+y0,z+z0],side);this.tri([b,y,z],[b,y+Y0,z+Z0],[b,y+Y1,z+Z1],side)}return this}
+ ringX(x,y,z,rInner,rOuter,depth,col,sides=20){let a=x-depth/2,b=x+depth/2;for(let i=0;i<sides;i++){const t=i*TAU/sides,u=(i+1)*TAU/sides;const p=(r,v)=>[b,y+Math.sin(v)*r,z+Math.cos(v)*r];this.quad(p(rInner,t),p(rInner,u),p(rOuter,u),p(rOuter,t),col)}return this}
+ lineBox(ax,ay,az,bx,by,bz,r,col){let d=Math.hypot(bx-ax,by-ay,bz-az);if(d<.001)return this;const vx=(bx-ax)/d,vy=(by-ay)/d,vz=(bz-az)/d;let ref=Math.abs(vy)>.8?[1,0,0]:[0,1,0];let U=normalize([vy*ref[2]-vz*ref[1],vz*ref[0]-vx*ref[2],vx*ref[1]-vy*ref[0]]);let V=[vy*U[2]-vz*U[1],vz*U[0]-vx*U[2],vx*U[1]-vy*U[0]];let A=[ax,ay,az],B=[bx,by,bz],p=(m,i,j)=>m.map((v,k)=>v+i*U[k]*r+j*V[k]*r);let a=p(A,-1,-1),b=p(A,1,-1),c=p(A,1,1),d0=p(A,-1,1),e=p(B,-1,-1),f=p(B,1,-1),g=p(B,1,1),h=p(B,-1,1);this.quad(a,b,f,e,col);this.quad(b,c,g,f,col);this.quad(c,d0,h,g,col);this.quad(d0,a,e,h,col);return this}
+}
+class WebDrive{
+ constructor(canvas){this.canvas=canvas;let gl=canvas.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:false,powerPreference:'high-performance'})||canvas.getContext('experimental-webgl');if(!gl)throw Error('WebGL unavailable');this.gl=gl;const vs=`attribute vec3 aPos;attribute vec3 aNormal;attribute vec3 aColor;uniform mat4 uMVP;uniform mat4 uModel;varying vec3 vNormal;varying vec3 vColor;varying vec3 vPos;void main(){vec4 wp=uModel*vec4(aPos,1.);vPos=wp.xyz;vNormal=normalize(mat3(uModel)*aNormal);vColor=aColor;gl_Position=uMVP*vec4(aPos,1.);}`;
+ const fs=`precision mediump float;varying vec3 vNormal;varying vec3 vColor;varying vec3 vPos;uniform vec3 uCam;uniform float uAlpha;uniform float uGlow;uniform float uFog;uniform float uAsphalt;uniform float uTravel;void main(){vec3 N=normalize(vNormal);vec3 sun=normalize(vec3(-.55,.9,.75));vec3 V=normalize(uCam-vPos);float diff=max(dot(N,sun),0.);vec3 tint=mix(vec3(.57,.76,1.06),vec3(1.19,1.05,.88),clamp(diff,0.,1.));float shade=.30+.67*diff+.18*max(dot(N,normalize(vec3(.45,.22,-.85))),0.);float spec=pow(max(dot(reflect(-sun,N),V),0.),20.)*.40;float sky=max(dot(N,vec3(0.,1.,0.)),0.);vec3 c=vColor*tint*shade+spec*vec3(.93,.97,1.)+vColor*sky*.15;c=mix(c,vColor*1.45,uGlow);float fog=clamp((length(vPos-uCam)-35.)/145.,0.,.55)*uFog; c=mix(c,vec3(.58,.67,.72),fog);float grain=fract(sin(dot(vPos.xz*vec2(48.,16.)+vec2(uTravel*7.,uTravel*3.),vec2(12.9898,78.233)))*43758.5453);float strip=sin(vPos.x*1.9+sin(vPos.z*.037)*.8);c=mix(c,c*(.73+grain*.28+strip*.045),uAsphalt);gl_FragColor=vec4(c,uAlpha);}`;
+ const shader=(type,src)=>{let sh=gl.createShader(type);gl.shaderSource(sh,src);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh};let program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vs));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);this.p=program;
+ const loc={pos:gl.getAttribLocation(program,'aPos'),normal:gl.getAttribLocation(program,'aNormal'),color:gl.getAttribLocation(program,'aColor'),mvp:gl.getUniformLocation(program,'uMVP'),model:gl.getUniformLocation(program,'uModel'),cam:gl.getUniformLocation(program,'uCam'),alpha:gl.getUniformLocation(program,'uAlpha'),glow:gl.getUniformLocation(program,'uGlow'),fog:gl.getUniformLocation(program,'uFog'),asphalt:gl.getUniformLocation(program,'uAsphalt'),travel:gl.getUniformLocation(program,'uTravel')};this.loc=loc;for(const n of ['pos','normal','color'])gl.enableVertexAttribArray(loc[n]);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);this.meshCache={};this.vehicles={};this.travel=0;this.wheelAngle=0;this.curve=0;this.lastSpeed=0;this.frame=0;this.lightObjects=[];this.setupWorld();this.buildCar('v800');this.buildCar('m9');this.resize()}
+ mesh(name,geo){let gl=this.gl,m=this.meshCache[name];if(m)return m;let arr=new Float32Array(geo.v),b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,arr,gl.STATIC_DRAW);return this.meshCache[name]={buffer:b,count:arr.length/9}}
+ renderMesh(mesh,model=I(),options={}){const gl=this.gl,loc=this.loc;if(!mesh)return;gl.bindBuffer(gl.ARRAY_BUFFER,mesh.buffer);const stride=36;gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,stride,0);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,stride,12);gl.vertexAttribPointer(loc.color,3,gl.FLOAT,false,stride,24);gl.uniformMatrix4fv(loc.model,false,model);gl.uniformMatrix4fv(loc.mvp,false,mul(this.vp,model));gl.uniform1f(loc.alpha,options.alpha===undefined?1:options.alpha);gl.uniform1f(loc.glow,options.glow||0);gl.uniform1f(loc.fog,options.fog===undefined?1:options.fog);gl.uniform1f(loc.asphalt,options.asphalt||0);gl.uniform1f(loc.travel,this.travel||0);gl.drawArrays(gl.TRIANGLES,0,mesh.count)}
+ setupWorld(){let g=new Geo();g.box(0,-.11,-85,18,.18,360,'road');this.road=this.mesh('road',g);g=new Geo();g.box(0,-.20,-85,160,.09,360,'#526b57');this.ground=this.mesh('ground',g);g=new Geo();for(let x of [-8.98,8.98])g.box(x,.035,-85,.20,.045,360,'#e2cc9a');for(let x of [-3,3])g.box(x,.02,-85,.085,.035,360,'#d1dde8');this.edges=this.mesh('edges',g);
+ g=new Geo();for(let i=0;i<28;i++){let z=-3-i*12;for(let x of [-3,3])g.box(x,.042,z,.16,.04,5.2,'#e5ebea');}this.dashes=this.mesh('dashes',g);
+ g=new Geo();for(let side of [-1,1]){let x=side*9.55;g.box(x,.58,-85,.14,.18,350,'#bfc8ca');g.box(x,.24,-85,.11,.12,350,'#616b73');for(let i=0;i<35;i++){g.box(x,.41,25-i*10,.19,.8,.16,'#7a858a')}}this.guard=this.mesh('guard',g);
+ g=new Geo();for(let i=0;i<34;i++){let z=-i*10+15,sz=10+(i%4)*7;for(let s of [-1,1]){let x=s*(15+(i*13%6));g.box(x,.04,z,12,.1,8,i%3===0?'#4b7758':'#5b8055');}}this.grass=this.mesh('grass',g);
+ g=new Geo();const rand=(i)=>((i*167+43)%997)/997;for(let i=0;i<30;i++)for(let s of [-1,1]){const x=s*(13+rand(i+3)*14),z=-i*13+35,h=2.1+rand(i+17)*3.5;g.box(x,h/2-.1,z,.32,h,.34,'#685343');for(let j=0;j<4;j++){const y=h*.62+j*.4;g.box(x,y,z,1.1+j*.22,.38,1.0+j*.14,j%2?'#2f6849':'#21543a')}}this.trees=this.mesh('trees',g);
+ g=new Geo();for(let i=0;i<20;i++){let z=26-i*21;for(let s of [-1,1]){let x=s*11;g.box(x,4,z,.20,8,.20,'#b3b8b9');g.box(x-s*1.4,8,z,3,.13,.14,'#b3b8b9');g.box(x-s*2.5,7.85,z,.34,.1,.8,'#e9e6c5')}}this.lamps=this.mesh('lamps',g);
+ g=new Geo();for(let i=0;i<32;i++){const rr=rand(i+51),x=(i%2?1:-1)*(60+rr*36),z=-100-i*5,h=6+rr*20;g.box(x,h/2,z,5+rr*5,h,5+rr*5,i%4===0?'#455a66':i%3?'#67737b':'#5d6977');for(let row=0;row<4;row++){g.box(x+1.2,h*.12+row*h*.18,z+3.7,1.2,.2,.025,'#9b9d8e')}}this.city=this.mesh('city',g);
+ g=new Geo();for(let s of [-1,1])g.box(s*10,.03,-80,1,.08,320,'#868a7b');this.kerbs=this.mesh('kerbs',g);
+ g=new Geo();for(let i=0;i<18;i++){let a=i*TAU/18,b=(i+1)*TAU/18;g.tri([0,0,0],[Math.cos(a)*1.42,0,Math.sin(a)*2.8],[Math.cos(b)*1.42,0,Math.sin(b)*2.8],'#080e15')}this.shadow=this.mesh('carshadow',g);
+ // Roadside advertising gantry and destination signs.
+ g=new Geo();g.box(-9.5,4.6,-28,.23,9,.23,'#9faab0');g.box(9.5,4.6,-28,.23,9,.23,'#9faab0');g.box(0,8.7,-28,20,.25,.25,'#9faab0');g.box(-3.5,7.6,-28,5,2,.22,'#1c836b');g.box(3.5,7.6,-28,5,2,.22,'#1c836b');g.box(-3.4,7.3,-27.83,3,.07,.05,'#e4f1de');g.box(3.5,7.3,-27.83,3,.07,.05,'#e4f1de');this.gantry=this.mesh('gantry',g);
+ // Traffic cars as 3D moving vehicles, intentionally lower complexity.
+ this.traffic=[];const ccols=['#c3ced1','#aab4c3','#313d45','#82909d','#6a7a84'];for(let j=0;j<6;j++){g=new Geo();let co=ccols[j%ccols.length];g.box(0,.85,0,1.72,.65,3.3,co);g.wedge(-1.1,1.05,1.12,1.9,1.55,1.52,1.14,'#283e4a');g.box(-.62,.84,1.65,.44,.19,.06,'#effafa');g.box(.62,.84,1.65,.44,.19,.06,'#effafa');for(const x of [-.82,.82])for(const z of [-1.0,1.0])g.cylX(x,.44,z,.38,.38,.22,10,'tire');this.traffic.push({mesh:this.mesh('traffic'+j,g),x:j%3===0?-4:j%3===1?0:4,z:-22-j*30,speed:j%2?10:5})}
+ }
+ buildCar(key){const mpv=key==='v800';const front=mpv?2.65:2.48,rear=mpv?-2.77:-2.47;const gold=mpv?'cream':'gold', lower=mpv?'#0b1218':'#161b20',roof=mpv?'cream':'gold';let objs=[];const add=(suffix,g,model=I(),opts={})=>objs.push({mesh:this.mesh(key+suffix,g),model,opts});let g;
+ // Layered sculpted metal body with chamfers and contrasting bonnet.
+ g=new Geo();g.wedge(rear+.12,front-.12,.59,1.34,1.32,2.3,2.42,lower);g.box(0,.39,0,2.18,.40,front-rear-.18,'#111b20');add('chassis',g);
+ g=new Geo();g.wedge(rear+.04,front-.02,1.06,1.30,1.29,2.33,2.28,gold);add('belt',g);
+ g=new Geo();g.wedge(rear+.12,front-.06,.69,.94,.92,2.34,2.32,lower);add('bodySides',g);
+ g=new Geo();g.wedge(front-1.12,front-.15,1.22,1.56,1.26,2.26,2.20,gold);g.wedge(rear+.06,rear+.92,1.20,1.30,1.56,2.16,2.22,gold);add('hood',g);
+ const roofHeight=mpv?2.63:2.29;const glassBase=mpv?1.39:1.33, roofFront=mpv?1.38:.87, roofRear=mpv?-2.18:-1.82;
+ g=new Geo();g.wedge(roofRear,roofFront,glassBase,roofHeight-.20,roofHeight-.24,2.12,1.92,roof);add('roof',g);
+ g=new Geo();g.box(0,roofHeight-.13,(roofRear+roofFront)/2,1.83,.22,roofFront-roofRear-.09,roof);g.box(0,roofHeight+.025,(roofRear+roofFront)/2,1.54,.024,Math.max(.2,roofFront-roofRear-1.3),'#1d2c36');add('roofTop',g);
+ // Windows: sloped front windshield and side glass cut into bold geometric shapes.
+ g=new Geo();const wf=roofFront+.038, w=0.84,wt=.86;
+ g.quad([-w,glassBase+.03,front-1.12],[w,glassBase+.03,front-1.12],[wt,roofHeight-.39,wf],[-wt,roofHeight-.39,wf],'glassFront');
+ g.quad([-wt,roofHeight-.40,roofRear+.04],[wt,roofHeight-.40,roofRear+.04],[w,glassBase+.03,rear+.9],[-w,glassBase+.03,rear+.9],'glass');
+ for(let s of [-1,1]){let xa=s*1.13,xb=s*.945;
+ g.quad([xa,1.44,front-1.15],[xa,1.44,-.21],[xb,roofHeight-.37,-.25],[xb,roofHeight-.37,roofFront-.10],'glassTint');
+ g.quad([xa,1.44,-.32],[xa,1.44,rear+.88],[xb,roofHeight-.37,roofRear+.14],[xb,roofHeight-.37,-.38],'glass');
+ }add('glass',g);
+ // Chrome glass framing: side window dividers, headlamp outlines, door trim.
+ g=new Geo();for(let s of [-1,1]){let xx=s*1.145;
+ g.lineBox(xx,1.46,front-1.17,s*.945,roofHeight-.33,roofFront-.05,.026,'silver');
+ g.lineBox(xx,1.46,-.23,s*.946,roofHeight-.34,-.24,.033,'silver');
+ g.lineBox(xx,1.46,-.37,s*.946,roofHeight-.34,-.37,.03,'silver');
+ g.lineBox(xx,1.46,rear+.89,s*.945,roofHeight-.34,roofRear+.06,.026,'silver');
+ g.lineBox(xx,1.39,front-1.17,xx,1.39,rear+.87,.024,'silver');
+ g.box(xx,.91,-.15,.022,.028,2.55,'#c3b9aa');
+ g.box(xx,.79,-.22,.036,.09,.38,'#96a5ae');
+ g.box(xx,1.36,front-.98,.25,.12,.33,'silver');
+ g.box(xx+s*.13,1.38,front-1.01,.23,.09,.31,'#222a33');
+ }add('trim',g);
+ // Prominent vehicle-specific fascia. V800 has vertical rectangular DRLs, M9 sweeping LED bar.
+ g=new Geo();g.box(0,.99,front-.025,2.16,.75,.16,lower);g.box(0,.57,front+.085,1.85,.20,.075,'#192934');
+ if(mpv){for(let s of [-1,1]){g.box(s*.88,1.13,front+.09,.28,.53,.055,'#0c1e2c');g.box(s*.90,1.32,front+.13,.13,.14,.035,'led');g.box(s*.9,1.06,front+.13,.11,.22,.035,'led');g.box(s*.91,1.37,front+.14,.14,.065,.035,'blue');}g.box(0,1.43,front+.055,2.0,.07,.06,'#9cabb3');}
+ else{g.box(0,1.33,front+.06,2.10,.055,.10,'led');g.box(0,1.395,front+.07,2.10,.035,.09,'blue');for(let s of [-1,1]){g.box(s*.78,1.41,front+.09,.45,.16,.09,'led');g.box(s*.78,1.18,front+.085,.30,.05,.09,'#506477')} }
+ g.box(0,.39,front+.09,1.89,.07,.11,'silver');for(let x=-.78;x<.85;x+=.22){g.lineBox(x,.42,front+.14,x+.44,.77,front+.14,.009,'silver');g.lineBox(x,.75,front+.14,x+.44,.42,front+.14,.009,'silver')}
+ add('face',g);
+ // Front badge with physical T shape: no bitmap decal.
+ g=new Geo();g.box(0,1.22,front+.183,.33,.055,.018,'led');g.box(0,1.15,front+.186,.07,.17,.020,'led');g.box(0,.90,front+.155,.91,.23,.031,'#252c36');add('emblem',g);
+ g=new Geo();for(const s of [-1,1]){g.box(s*.85,.91,rear-.03,.37,.19,.11,'red');g.box(s*.86,.72,front-.04,.14,.05,.11,'silver');}add('rearLamps',g);
+ // Roof pod and small antenna details.
+ g=new Geo();g.box(0,roofHeight+.12,.52,.52,.20,.75,'#151f27');g.box(0,roofHeight+.24,.52,.44,.05,.59,'#485763');add('sensors',g);
+ // Four genuinely rotating wheels. Parent matrices rotate around X, with steering front wheels.
+ const wheels=[];
+ for(let z of [1.63,-1.70])for(let s of [-1,1]){const size=mpv?.49:.49;const side=s;const x=s*1.13;g=new Geo();g.cylX(0,0,0,size,size,.40,22,'tire','rubberSide');g.cylX(side*.225,0,0,.375,.375,.026,22,'#3b4650','metal');g.ringX(side*.23,0,0,.23,.37,.02,'silver');g.cylX(side*.261,0,0,.14,.14,.014,18,'hub','hub');
+ for(let k=0;k<12;k++){const a=k*TAU/12;const ya=Math.sin(a),za=Math.cos(a);g.lineBox(side*.271,ya*.16,za*.16,side*.271,ya*.337,za*.337,.033,mpv?'silver':'#c5c0b5');}
+ const mesh=this.mesh(key+'wheel'+s+z,g);wheels.push({mesh,x,y:.50,z,front:z>0,side});
+ // Dark wheel arch behind.
+ let arch=new Geo();arch.cylX(x,.52,z,.55,.55,.39,22,'#161e25','black');add('arch'+s+z,arch);
+ }
+ this.vehicles[key]={objs,wheels,mpv};}
+ resize(){let box=this.canvas.getBoundingClientRect();const d=Math.min(1.55,window.devicePixelRatio||1),w=Math.max(1,Math.round(box.width*d)),h=Math.max(1,Math.round(box.height*d));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;this.gl.viewport(0,0,w,h)}this.aspect=w/h;}
+ reset(){this.travel=0;this.wheelAngle=0;this.frame=0;this.curve=0;}
+ frameDraw(s){let gl=this.gl;this.resize();let dt=Math.min(.055,s.dt||0);this.travel+=s.speed/3.6*dt;this.wheelAngle+=s.speed/3.6/.49*dt;this.frame+=dt;
+ gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(this.p);
+ // In the front-facing camera, the driver's right is screen-left/world -X.
+ let x=-s.position*3.05,heading=clamp(-s.steer*.1,-.14,.14),bank=-s.steer*Math.min(.075,s.speed/950);
+ const shake=(Math.sin(this.frame*18)*.006+Math.sin(this.frame*25)*.004)*Math.min(1,s.speed/125),crash=s.crash||0;
+ const cam=[3.25+x*.42+shake,5.15+Math.min(.25,s.speed*.002),13.2],target=[-.7+x*.47,1.10,-2.7];
+ this.cam=cam;this.vp=mul(persp(Math.PI*.29,this.aspect,.1,375),lookAt(cam,target));gl.uniform3f(this.loc.cam,...cam);
+ // Both cars point toward +Z (their front grills face the camera). Forward driving is +Z.
+ // Objects fixed to the world must therefore move toward -Z relative to the following camera.
+ // This also applies to road markings, traffic, roadside objects, and the front wheel's steering yaw.
+ this.renderMesh(this.ground);this.renderMesh(this.road,I(),{asphalt:1});this.renderMesh(this.grass);this.renderMesh(this.edges);this.renderMesh(this.kerbs);
+ // The road is visually behind a front-facing camera: forward acceleration pushes
+ // pavement markings away from the viewer, toward the distant horizon (-Z).
+ // Negative periodic shifts keep the spacings seamless without reversing the motion.
+ this.renderMesh(this.dashes,trans(0,0,-(this.travel%12)));
+ this.renderMesh(this.guard);
+ this.renderMesh(this.lamps,trans(0,0,-(this.travel%21)));
+ this.renderMesh(this.trees,trans(0,0,-(this.travel%13)));
+ this.renderMesh(this.gantry,trans(0,0,-(this.travel%210)));
+ // Relative velocity = scenery/traffic velocity - our actual forward velocity.
+ const wrap=(v,range)=>((v%range)+range)%range;
+ for(const t of this.traffic){const z=wrap(t.z-this.travel+this.frame*t.speed+250,280)-250;
+  this.renderMesh(t.mesh,trans(t.x,0,z));}
+ // Ground-hugging layered shadow. No stale still-image car sprite remains.
+ let root=combine(trans(x+crash*Math.sign(s.position||1)*4,crash*crash*1.15,0),ry(heading+crash*1.8),rz(bank+Math.sin(crash*6)*crash*.55));
+ const car=this.vehicles[s.selected]||this.vehicles.v800;
+ gl.depthMask(false);this.renderMesh(this.shadow,trans(x,.06,0),{alpha:.33,fog:0});gl.depthMask(true);
+ if(!s.photoMode)for(let ob of car.objs)this.renderMesh(ob.mesh,mul(root,ob.model),ob.opts);
+ const spin=this.wheelAngle;if(!s.photoMode)for(const wheel of car.wheels){let detach=s.selected==='m9'&&crash>.2&&wheel.front&&wheel.side===1;let wm=combine(root,trans(wheel.x+(detach?crash*4:0),wheel.y+(detach?crash*2:0),wheel.z+(detach?crash*1.2:0)),ry(wheel.front?heading*1.75:0),rx(spin+(detach?crash*8:0)));this.renderMesh(wheel.mesh,wm)}
+ // Rim glows / reflective surfaces need visible illumination on dim displays.
+ gl.flush();}
+}
+window.Drive3D=WebDrive;
+})();
+
+</script>
+</head>
+<body>
+<div id="app">
+  <section id="menu" class="screen active" aria-label="车辆选择">
+    <div class="ambient a"></div><div class="ambient b"></div>
+    <div class="menu-layout">
+      <header><div class="brand-kicker">DRIVE · CHALLENGE</div><h1 class="brand-title">驾控<span>挑战</span></h1><p class="menu-subtitle">请选择你的车辆 · 体验意想不到的结局</p></header>
+      <div class="garage">
+        <button id="selectV" class="car-option vselected" aria-label="选择特斯拉V800"><div class="car-img-wrap"><img class="car-img" src="assets/v800.webp" draggable="false" alt="特斯拉V800"></div><div class="car-info"><div class="car-name">特斯拉 V800</div><div class="car-tag">黑白双拼 · 豪华旗舰</div><div class="pick-row"><span class="pick-dot"></span><span class="pick-text">已选择</span></div></div></button>
+        <button id="selectM" class="car-option" aria-label="选择特斯拉M9"><div class="car-img-wrap"><img class="car-img m" src="assets/m9.webp" draggable="false" alt="特斯拉M9"></div><div class="car-info"><div class="car-name">特斯拉 M9</div><div class="car-tag">鎏金车身 · 科技豪华</div><div class="pick-row"><span class="pick-dot"></span><span class="pick-text">点击选择</span></div></div></button>
+      </div>
+      <div class="menu-bottom"><p class="route-note">长按油门加速，<b>80 km/h</b> 之后留意惊喜</p><button id="startBtn" class="main-btn">开始游戏　➜</button><div class="disclaimer">原创架空恶搞游戏 · 剧情与真实汽车品质、安全表现无关</div></div>
+    </div>
+  </section>
+  <section id="drive" class="screen" aria-label="驾驶场景">
+    <canvas id="roadCanvas"></canvas><div class="vignette"></div>
+    <div class="drive-head"><div class="dashboard-meta glass"><div class="drive-model" id="driveModel">特斯拉 <em>V800</em></div><div class="meta-km">行驶距离 <span id="trip">0.00</span> km</div></div><button id="pauseBtn" class="pause-btn glass" title="暂停">Ⅱ</button></div>
+    <div class="map" aria-hidden="true"></div><div class="car-shadow" id="shadow"></div><canvas id="worldCanvas" aria-label="实时3D驾驶场景" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas><div id="speedFX"></div><div id="rimA" class="wheel-overlay"><div class="wheel-spinner"></div></div><div id="rimB" class="wheel-overlay"><div class="wheel-spinner"></div></div><button id="viewMode" type="button">◉ 写实车身 / 3D</button><img id="playerVehicle" class="vehicle" alt="玩家车辆" src="assets/v800.webp" draggable="false">
+    <div class="status-tip glass" id="statusTip"><strong>高速驾驶挑战</strong><span id="statusText">长按油门，持续加速</span></div>
+    <div id="speedCluster" class="speed-cluster"><div class="needle" id="speedNeedle"></div><div class="speed-number" id="speedNumber">0</div><div class="speed-unit">km/h</div></div>
+    <div id="roadWarning" class="road-warning"><span>⚠ 危险提示</span><b id="warningText">刹车踏板断裂</b></div>
+    <button class="music-chip" id="soundBtn">♪ 音效：开</button>
+    <div class="controls"><div class="control-group"><button class="control steer" data-action="left" aria-label="向左转"><span class="symbol">◀</span><small>左转</small></button><button class="control steer" data-action="right" aria-label="向右转"><span class="symbol">▶</span><small>右转</small></button></div><div class="control-group"><button class="control brake" data-action="brake" aria-label="刹车"><span class="symbol">⊗</span><small>刹车</small></button><button class="control accel" data-action="accel" aria-label="油门"><span class="symbol">▥</span><small>油门</small></button></div></div>
+    <div class="overlay" id="pauseOverlay"><div class="dialog"><h2>游戏已暂停</h2><p>长按油门持续加速；长按刹车减速；按左右方向键转向。电脑也可使用 W / S / A / D 操作。</p><button id="resumeBtn" class="action-btn">继续驾驶</button><button id="pauseRestart" class="action-btn secondary">重新开始</button><button id="pauseMenu" class="action-btn secondary">返回选车</button></div></div>
+  </section>
+  <section id="ending" class="screen" aria-label="游戏结局"><img id="endingBg" class="ending-bg" src="assets/fail_v800.webp" alt="车辆失控，游戏结束"><div class="ending-shade"></div><div class="ending-head"><span class="mini-label">⚠ 虚构趣味剧情</span><span id="finalSpeed" class="km-final">速度 0 km/h</span></div><div class="ending-footer"><button id="retryBtn">↻ 再玩一次</button><button id="menuBtn" class="alt">⇦ 重新选车</button></div></section>
+</div>
+<script>
+(() => {
+'use strict';
+const $=id=>document.getElementById(id);
+const config={v800:{name:'特斯拉 V800',image:'assets/v800.webp',end:'assets/fail_v800.webp',warning:'刹车踏板断裂'},m9:{name:'特斯拉 M9',image:'assets/m9.webp',end:'assets/fail_m9.webp',warning:'前轮断裂，车辆失控'}};
+let selected='v800',screen='menu',paused=false,muted=false,gameTime=0,crashTime=0,crashSpeed=0,crashDir=1;
+let speed=0,distance=0,position=0,steerLean=0,roadShift=0,brakeHeld=0,brakeStartedFast=false,carWobble=0;
+const controls={accel:false,brake:false,left:false,right:false};
+const ctx=$('roadCanvas').getContext('2d',{alpha:false});let world3d=null;let photoMode=true;let rimA=null;let rimB=null;try{if(window.Drive3D){world3d=new window.Drive3D($('worldCanvas'));$('playerVehicle').style.display='block';$('shadow').style.display='none';}}catch(e){console.warn('3D fallback:',e);$('worldCanvas').style.display='none';}let W=390,H=844,DPR=1,raf=0,last=0;
+let audioCtx=null,engine=null,engineGain=null;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const show=id=>{for(const s of document.querySelectorAll('.screen'))s.classList.toggle('active',s.id===id);screen=id;};
+function choose(key){selected=key; $('selectV').className='car-option'+(key==='v800'?' vselected':'');$('selectM').className='car-option'+(key==='m9'?' mselected':'');for(const [id,key2] of [['selectV','v800'],['selectM','m9']])$(id).querySelector('.pick-text').textContent=key===key2?'已选择':'点击选择';}
+$('selectV').addEventListener('click',()=>choose('v800'));$('selectM').addEventListener('click',()=>choose('m9'));
+$('startBtn').addEventListener('click',startGame);
+$('retryBtn').addEventListener('click',startGame);
+$('menuBtn').addEventListener('click',goMenu);
+$('pauseMenu').addEventListener('click',goMenu);
+$('pauseRestart').addEventListener('click',startGame);
+$('resumeBtn').addEventListener('click',togglePause);
+$('pauseBtn').addEventListener('click',togglePause);const modeBtn=$('viewMode');modeBtn.style.display=world3d?'block':'none';modeBtn.addEventListener('click',()=>{photoMode=!photoMode;$('playerVehicle').style.display=photoMode?'block':'none';modeBtn.textContent=photoMode?'◉ 写实车身 / 3D':'◈ 3D模型 / 写实';$('rimA').style.display=$('rimB').style.display=photoMode?'block':'none';});
+$('soundBtn').addEventListener('click',()=>{muted=!muted;$('soundBtn').textContent='♪ 音效：'+(muted?'关':'开');if(engineGain)engineGain.gain.value=muted?0:.015;});
+function clearControls(){for(const k in controls)controls[k]=false;document.querySelectorAll('.control').forEach(b=>b.classList.remove('pressed'));brakeHeld=0;brakeStartedFast=false;}
+function ensureAudio(){if(muted)return;try{if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();engine=audioCtx.createOscillator();engine.type='sawtooth';engineGain=audioCtx.createGain();engineGain.gain.value=0.014;engine.connect(engineGain);engineGain.connect(audioCtx.destination);engine.start()}if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}}
+function beep(freq,duration=0.16){if(muted||!audioCtx)return;try{const o=audioCtx.createOscillator();const g=audioCtx.createGain();o.type='square';o.frequency.setValueAtTime(freq,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(55,freq*.5),audioCtx.currentTime+duration);g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration+.01)}catch(e){}}
+function startGame(){clearControls();paused=false;speed=0;distance=0;position=0;steerLean=0;roadShift=0;gameTime=0;crashTime=0;carWobble=0;last=performance.now();$('pauseOverlay').classList.remove('show');$('roadWarning').style.display='none';$('statusTip').classList.remove('warn');$('speedCluster').classList.remove('alert');$('playerVehicle').src=config[selected].image;$('driveModel').innerHTML='特斯拉 <em>'+(selected==='v800'?'V800':'M9')+'</em>';$('statusText').textContent=selected==='v800'?'长按油门加速，超过80后试着长按刹车':'长按油门加速，超过80体验车辆结局';show('drive');if(world3d){world3d.reset();$('playerVehicle').style.display=photoMode?'block':'none';$('rimA').style.display=$('rimB').style.display=photoMode?'block':'none';}ensureAudio();resizeCanvas();updateHUD();if(!raf)raf=requestAnimationFrame(loop);}
+function goMenu(){paused=false;clearControls();$('pauseOverlay').classList.remove('show');show('menu');if(engineGain)engineGain.gain.value=0;}
+function togglePause(){if(screen!=='drive'||crashTime>0)return;paused=!paused;clearControls();$('pauseOverlay').classList.toggle('show',paused);if(engineGain)engineGain.gain.value=paused?0:.014;last=performance.now();}
+// Hold buttons continuously while pointer/touch remains down.
+for(const btn of document.querySelectorAll('.control')){
+ const action=btn.dataset.action;
+ btn.addEventListener('pointerdown',e=>{if(screen!=='drive'||paused||crashTime)return;e.preventDefault();btn.setPointerCapture?.(e.pointerId);controls[action]=true;btn.classList.add('pressed');if(action==='brake'){brakeHeld=0;brakeStartedFast=speed>80;}ensureAudio();});
+ const release=e=>{if(!controls[action])return;e.preventDefault();controls[action]=false;btn.classList.remove('pressed');if(action==='brake'){brakeHeld=0;brakeStartedFast=false;}};
+ btn.addEventListener('pointerup',release);btn.addEventListener('pointercancel',release);btn.addEventListener('lostpointercapture',release);
+ btn.addEventListener('contextmenu',e=>e.preventDefault());
+}
+const keys={KeyW:'accel',ArrowUp:'accel',Space:'accel',KeyS:'brake',ArrowDown:'brake',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};
+window.addEventListener('keydown',e=>{const a=keys[e.code];if(!a||screen!=='drive'||paused||crashTime)return;e.preventDefault();if(!controls[a]&&a==='brake'){brakeStartedFast=speed>80;brakeHeld=0;}controls[a]=true;document.querySelector(`[data-action="${a}"]`)?.classList.add('pressed');ensureAudio();});
+window.addEventListener('keyup',e=>{const a=keys[e.code];if(!a)return;controls[a]=false;document.querySelector(`[data-action="${a}"]`)?.classList.remove('pressed');if(a==='brake'){brakeHeld=0;brakeStartedFast=false;}});
+window.addEventListener('blur',()=>{if(screen==='drive'&&!paused&&!crashTime)togglePause();clearControls();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&screen==='drive'&&!paused&&!crashTime)togglePause();});
+function fail(){if(crashTime||screen!=='drive')return;crashTime=.001;crashSpeed=speed;crashDir=position>=0?1:-1;clearControls();$('roadWarning').style.display='block';$('warningText').textContent=config[selected].warning;$('statusTip').classList.add('warn');$('statusText').textContent='车辆已经失去控制！';$('speedCluster').classList.add('alert');beep(880,.5);}
+function finishCrash(){show('ending');$('endingBg').src=config[selected].end;$('finalSpeed').textContent='触发时速度 '+Math.round(crashSpeed)+' km/h';$('roadWarning').style.display='none';if(engineGain)engineGain.gain.value=0;}
+function update(dt){
+ gameTime+=dt;
+ if(crashTime){crashTime+=dt;speed=Math.max(0,speed-9*dt);position+=crashDir*dt*1.17;steerLean+=dt*110*crashDir;if(crashTime>1.85)finishCrash();return;}
+ // Player acceleration deliberately compact for short phone sessions.
+ if(controls.accel){speed=Math.min(165,speed+(13.9-2.2*(speed/165))*dt)}
+ if(controls.brake){brakeHeld+=dt;speed=Math.max(0,speed-40*dt);}else{brakeHeld=0;speed=Math.max(0,speed-(.6+speed*.008)*dt)}
+ if(selected==='m9'&&speed>80.1){fail();return;}
+ if(selected==='v800'&&controls.brake&&brakeStartedFast&&brakeHeld>=.33){fail();return;}
+ const turn=(Number(controls.right)-Number(controls.left));
+ position=clamp(position+turn*dt*(.43+speed/280),-1.42,1.42);
+ steerLean=lerp(steerLean,-turn*6,.12);
+ carWobble=Math.sin(gameTime*14)*Math.min(1,speed/120)*.6;
+ distance+=speed*dt/3600;
+ roadShift+=speed*dt/40;
+ if(engine){engine.frequency.setTargetAtTime(44+speed*.65,audioCtx.currentTime,.12);if(engineGain)engineGain.gain.value=muted?0:clamp(.008+speed*.00007,.008,.024)}
+}
+function updateHUD(){ $('trip').textContent=distance.toFixed(2);$('speedNumber').textContent=Math.round(speed);$('speedNeedle').style.transform='rotate('+(-120+speed*1.15)+'deg)';const s=$('speedCluster');s.classList.toggle('alert',crashTime>0||speed>80);if(!crashTime&&speed>=70&&speed<=80){$('statusText').textContent='接近 80 km/h，请留意！';$('statusTip').classList.add('warn')}else if(!crashTime&&speed>80){$('statusText').textContent='已超过 80 km/h';$('statusTip').classList.add('warn')}else if(!crashTime){$('statusTip').classList.remove('warn');$('statusText').textContent=selected==='v800'?'长按油门加速，超过80后试着长按刹车':'长按油门加速，超过80体验车辆结局'}}
+function resizeCanvas(){const r=$('roadCanvas').getBoundingClientRect();W=r.width||390;H=r.height||844;DPR=Math.min(2,window.devicePixelRatio||1);const c=$('roadCanvas');if(c.width!==Math.round(W*DPR)||c.height!==Math.round(H*DPR)){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR)}ctx.setTransform(DPR,0,0,DPR,0,0)}
+window.addEventListener('resize',resizeCanvas);
+const phase01=v=>((v%1)+1)%1;
+const rgb=(a,b,t)=>`rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`;
+function roadGeometry(t){const depth=t*t;const curve=Math.sin(roadShift*.014)*W*.034;const center=W/2+curve*(1-t);return {x:center,half:lerp(W*.07,W*1.04,Math.pow(t,1.5)),y:lerp(H*.39,H*1.05,Math.pow(t,1.32))}}
+function poly(points,fill){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fillStyle=fill;ctx.fill()}
+function drawSky(){const hy=H*.42;let gr=ctx.createLinearGradient(0,0,0,hy);gr.addColorStop(0,'#1b3d60');gr.addColorStop(.49,'#668aab');gr.addColorStop(.9,'#ecaa7a');gr.addColorStop(1,'#e9b288');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+ const sx=W*.81,sy=hy*.54;const sun=ctx.createRadialGradient(sx,sy,3,sx,sy,W*.48);sun.addColorStop(0,'#ffecc1a8');sun.addColorStop(.33,'#ffc17729');sun.addColorStop(1,'#ffaa6600');ctx.fillStyle=sun;ctx.fillRect(0,0,W,hy);
+ for(let i=0;i<6;i++){let x=((i*197+38)%(W+170))-60,y=H*(.11+(i%4)*.06);ctx.fillStyle=i%2?'#ffffff0b':'#ffffff10';ctx.beginPath();ctx.ellipse(x,y,65+(i%3)*19,9+i*1.6,-.08,0,Math.PI*2);ctx.fill()}
+ // low coastal hills
+ ctx.fillStyle='#506b80';ctx.beginPath();ctx.moveTo(0,hy);for(let i=0;i<=22;i++){let x=i*W/22;ctx.lineTo(x,hy-20-Math.sin(i*.9+1)*12-Math.sin(i*.35)*19)}ctx.lineTo(W,hy);ctx.fill();
+ // mid-rise skyline behind highway
+ for(let i=0;i<36;i++){const x=i*(W/33)-7;const h=14+((i*37+11)%67);ctx.fillStyle=i%4===0?'#415467':'#5e6a77';ctx.fillRect(x,hy-h,Math.max(7,W/29),h);if(i%3!==0){ctx.fillStyle='#d9bd91a0';for(let j=0;j<3;j++)ctx.fillRect(x+3+j*5,hy-h+7,2,3)}}
+ // distant water / city base
+ ctx.fillStyle='#7896a4';ctx.fillRect(0,hy,W,H-hy);
+}
+function drawScenery(){const horizon=H*.39;ctx.fillStyle='#29484a';poly([[0,horizon+15],[W*.35,horizon+16],[0,H]],'#35574d');poly([[W,horizon],[W*.65,horizon+13],[W,H]],'#325344');
+ const rightPoints=[],leftPoints=[];for(let j=1;j<35;j++){let t=phase01(j/35-roadShift*.052);if(t<.025)continue;let p=roadGeometry(t);const sx=p.x+p.half*1.15, sx2=p.x-p.half*1.15;const size=3+33*t*t;rightPoints.push([sx,p.y,size,t]);leftPoints.push([sx2,p.y,size,t]);}
+ for(const [x,y,size,t] of [...leftPoints,...rightPoints].sort((a,b)=>a[3]-b[3])){if(x<-65||x>W+65)continue;const trunk=Math.max(2,size*.13);ctx.fillStyle='#493c35';ctx.fillRect(x-trunk/2,y-size*.7,trunk,size*.75);ctx.fillStyle=t>.75?'#244d36':'#356848';ctx.beginPath();ctx.ellipse(x,y-size*.86,size*.40,size*.58,0,0,Math.PI*2);ctx.fill();}
+}
+function drawRoad(){const pg=(t,f=1)=>{const p=roadGeometry(t);return[p.x+p.half*f,p.y]};
+ poly([pg(0,-1.42),pg(0,1.42),pg(1,1.42),pg(1,-1.42)],'#9b9a8c');
+ poly([pg(0,-1.11),pg(0,1.11),pg(1,1.11),pg(1,-1.11)],'#25313d');
+ let gr=ctx.createLinearGradient(0,H*.4,0,H);gr.addColorStop(0,'#35414b');gr.addColorStop(1,'#101923');poly([pg(0,-1),pg(0,1),pg(1,1),pg(1,-1)],gr);
+ for(const side of [-1,1]){ctx.beginPath();for(let t=0;t<=1.01;t+=.03){const p=roadGeometry(Math.min(1,t));const x=p.x+side*p.half*.95;if(t===0)ctx.moveTo(x,p.y);else ctx.lineTo(x,p.y)}ctx.strokeStyle='#e5c57e';ctx.lineWidth=2.4;ctx.stroke();}
+ // Asphalt reflection bands
+ for(let j=0;j<18;j++){const t=phase01(j*.09-roadShift*.008),p=roadGeometry(t);ctx.strokeStyle=j%2===0?'#d8d7d50b':'#fbfbfa0b';ctx.lineWidth=1+3*t;ctx.beginPath();ctx.moveTo(p.x-p.half*.82,p.y);ctx.lineTo(p.x+p.half*.82,p.y);ctx.stroke();}
+ // Lane lines recede into the horizon: the cars face the camera and drive toward +Z.
+ for(let i=0;i<23;i++){const t0=phase01(i/23-roadShift*.11);const t1=Math.min(1,t0+.032);if(t1<=t0)continue;for(const f of [-.34,.34]){const a=pg(t0,f),b=pg(t1,f),p=roadGeometry(t0);ctx.strokeStyle='#ecf3f9b8';ctx.lineWidth=lerp(1,7,t0);ctx.lineCap='butt';ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke()}}
+ // guardrail uprights
+ for(const side of [-1,1]){for(let i=0;i<19;i++){const t=phase01(i/19-roadShift*.06);const p=roadGeometry(t),x=p.x+side*p.half*1.15;ctx.strokeStyle='#c6cbd2';ctx.lineWidth=1+5*t;ctx.beginPath();ctx.moveTo(x,p.y);ctx.lineTo(x,p.y-lerp(3,26,t));ctx.stroke()}ctx.beginPath();for(let t=0;t<=1;t+=.035){let p=roadGeometry(t),x=p.x+side*p.half*1.15,y=p.y-lerp(4,25,t);if(t===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.strokeStyle='#aabac8';ctx.lineWidth=3;ctx.stroke()}
+ // Overhead road portal every few seconds
+ const po=phase01(-roadShift*.035);if(po>.1&&po<.9){const p=roadGeometry(po),h=35+75*po;ctx.strokeStyle='#6b8495';ctx.lineWidth=2+5*po;const x1=p.x-p.half*1.05,x2=p.x+p.half*1.05;ctx.beginPath();ctx.moveTo(x1,p.y);ctx.lineTo(x1,p.y-h);ctx.lineTo(x2,p.y-h);ctx.lineTo(x2,p.y);ctx.stroke();ctx.fillStyle='#2d7c61';ctx.fillRect(p.x-h*.48,p.y-h+1,h*.95,15+20*po);ctx.fillStyle='#e5f5eb';ctx.textAlign='center';ctx.font=`${Math.max(7,po*13)}px sans-serif`;ctx.fillText('前方道路  →',p.x,p.y-h+12);}
+}
+function drawEffects(){if(!crashTime)return;ctx.fillStyle='rgba(255,41,65,.1)';ctx.fillRect(0,0,W,H);for(let i=0;i<35;i++){let t=crashTime,phase=(i*1.618%1),x=W*.5+(position*.14*W)+Math.sin(i*59+phase)*W*.4*t,y=H*.68+(phase-.5)*190*t;const s=(i%4+1)*t;ctx.fillStyle=i%3===0?'#ffe8a5':'#ff8846';ctx.beginPath();ctx.arc(x,y,s,0,Math.PI*2);ctx.fill()}}
+let dtScene=0;function draw(){if(!W||!H)return;ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);drawSky();if(!world3d){drawScenery();drawRoad();drawEffects();}ctx.restore();
+ if(world3d){world3d.frameDraw({dt:dtScene,speed,position,steer:(Number(controls.right)-Number(controls.left)),selected,crash:crashTime,photoMode});
+ $('speedFX').style.opacity=String(Math.min(.65,Math.max(0,(speed-25)/170)));
+ if(photoMode){
+  const v=$('playerVehicle');let w=Math.min(.73*W,435),h=w*(selected==='v800'?401/530:548/700),motion=-position*W*.26+(crashTime?Math.sign(position||1)*crashTime*85:0),tilt=steerLean*.6+Math.sin(gameTime*(6+speed*.06))*(speed/160)*.6+(crashTime?crashTime*33:0),bob=Math.sin(gameTime*(4+speed*.038))*(speed/160)*2.5,jump=crashTime*crashTime*45;
+  v.style.transform=`translate(calc(-50% + ${motion}px),calc(-50% + ${bob-jump}px)) rotate(${tilt}deg) scale(${crashTime?Math.max(.75,1-crashTime*.11):1})`;
+  let data=selected==='v800'?[[.729,.740,.091,.290],[.943,.640,.037,.135]]:[[.868,.746,.077,.333],[.973,.641,.039,.150]];
+  for(let j=0;j<2;j++){let el=$(j?'rimB':'rimA'),[xx,yy,ww,hh]=data[j];el.style.width=(w*ww)+'px';el.style.height=(h*hh)+'px';el.style.left=(W*.5-w*.5+w*xx+motion)+'px';el.style.top=(H*.58-h*.5+h*yy+bob-jump)+'px';el.style.transform=`translate(-50%,-50%) rotate(${tilt}deg)`;el.firstElementChild.style.transform=`rotate(${roadShift*260}deg)`}
+ }
+ return;}const v=$('playerVehicle');const motion=crashTime?(-crashDir*crashTime*62):-position*W*.28;const turn=crashTime?steerLean:steerLean+carWobble;const jump=crashTime?crashTime*crashTime*40:0;const scale=crashTime?Math.max(.7,1-crashTime*.16):1;
+ v.style.transform=`translate(calc(-50% + ${motion}px),calc(-50% - ${jump}px)) rotate(${turn}deg) scale(${scale})`;
+ $('shadow').style.transform=`translateX(calc(-50% + ${motion*.8}px)) scale(${crashTime?.95:1})`;
+}
+function loop(time){raf=requestAnimationFrame(loop);const dt=clamp((time-last)/1000,0,.05);dtScene=paused?0:dt;last=time;if(screen!=='drive')return;if(!paused){update(dt);updateHUD();}draw();}
+resizeCanvas();choose('v800');
+})();
+</script>
+</body>
+</html>
